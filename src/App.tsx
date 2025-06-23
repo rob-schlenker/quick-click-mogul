@@ -121,27 +121,40 @@ const TIER_COLORS = [
 ];
 
 // Function to calculate the color class and display number for an upgrade tier
-// Function to calculate the color class and display number for an upgrade tier
+// `currentLevel`: The actual level of the upgrade (e.g., clickPower: 1, 11, 21...)
+// `levelsPerColorTierUnit`: How many *units* of `currentLevel` before the color *and* tier number change.
+// `maxRelevantLevel`: The maximum *actual* level this upgrade is expected to reach before its visual progression caps.
 const getUpgradeTierVisuals = (
-    currentLevel: number, // This is the level (e.g., 1 for League 1, 10 for ClickPower 10, etc.)
-    levelsPerColorTier: number, // How many TOTAL levels before the next color tier
-    maxPossibleTier: number = TIER_COLORS.length // Max number of tier colors to use (1-indexed)
+    currentLevel: number,
+    levelsPerColorTierUnit: number, // e.g., 10 for clickPower, 100 for stadium capacity, 5 for player OVR
+    maxRelevantLevel: number // The absolute max level for this particular upgrade's visuals to progress
 ) => {
-    // Corrected logic: subtract 1 from currentLevel to make it 0-indexed for calculation
-    // This maps (1, 2, 3...) -> (0, 1, 2...) for array indexing and tier calculation
-    const zeroIndexedLevel = Math.max(0, currentLevel - 1); // Ensure it doesn't go below 0
+    const maxColorTierIndex = TIER_COLORS.length - 1; // Always 9 for 10 colors
 
+    // Cap the effective level for visual calculation at maxRelevantLevel
+    const cappedLevel = Math.min(currentLevel, maxRelevantLevel);
+
+    // Calculate which color tier to use (0-indexed for array access)
+    // Uses `Math.max(0, ...)` for currentLevel = 0, so it still starts at TIER_COLORS[0]
     const colorTierIndex = Math.min(
-        Math.floor(zeroIndexedLevel / levelsPerColorTier),
-        maxPossibleTier - 1 // Ensure we don't go out of bounds of TIER_COLORS array
+        Math.floor(Math.max(0, cappedLevel - 1) / levelsPerColorTierUnit), // Normalize to 0-indexed, then divide
+        maxColorTierIndex // Cap at the highest available color index
     );
 
-    // The displayed tier number should naturally follow the (0-indexed_level / levelsPerColorTier) + 1 logic,
-    // but ensures it doesn't exceed the max possible tier number (10).
+    // Calculate the displayed tier number (1-indexed for display)
+    // This will cycle 1-10
     const tierNumber = Math.min(
-        Math.floor(zeroIndexedLevel / levelsPerColorTier) + 1,
-        maxPossibleTier
+        Math.floor(Math.max(0, cappedLevel - 1) / levelsPerColorTierUnit) % TIER_COLORS.length + 1, // Cycle 1-10
+        TIER_COLORS.length // Cap displayed tier number at 10
     );
+
+    // If we've hit or exceeded the maxRelevantLevel, always show the last tier's color and number
+    if (currentLevel >= maxRelevantLevel && maxRelevantLevel > 0) {
+        return {
+            colorClass: TIER_COLORS[maxColorTierIndex], // Always the last color
+            tierNumber: TIER_COLORS.length,              // Always 10
+        };
+    }
 
     return {
         colorClass: TIER_COLORS[colorTierIndex] || TIER_COLORS[0],
@@ -157,8 +170,8 @@ const getUpgradeTierVisuals = (
 function App() {
 	// --- Game State Variables ---
 	const [money, setMoney] = useState(0);
-	const [clickPower, setClickPower] = useState(1);
-	const [stadiumCapacity, setStadiumCapacity] = useState(100);
+	const [clickPower, setClickPower] = useState(1); // Starting at 1
+	const [stadiumCapacity, setStadiumCapacity] = useState(100); // Starting at 100
 	const [passiveIncomePerSecond, setPassiveIncomePerSecond] = useState(0);
 
     const [currentLeagueLevel, setCurrentLeagueLevel] = useState(() => {
@@ -477,7 +490,8 @@ function App() {
                     (() => {
                         const leagueVisuals = getUpgradeTierVisuals(
                             currentLeagueLevel,
-                            1     // Change color every 1 league level
+                            1, // levelsPerColorTierUnit: 1 level per color tier
+                            LEAGUE_TIERS.length // maxRelevantLevel: Total number of leagues
                         );
                         return (
                             <div className="flex items-center justify-center mt-4">
@@ -535,16 +549,19 @@ function App() {
 				{/* Upgrade 1: Click Power (Ticket Sales) */}
                 {
                     (() => {
+                        // Max clickPower for visual progression could be, for example, 100 levels (10 tiers * 10 levels/tier)
+                        const MAX_CLICK_POWER_FOR_VISUALS = 100;
                         const upgradeVisuals = getUpgradeTierVisuals(
                             clickPower, // The actual level of clickPower
-                            10 // Each color tier lasts for 10 levels of clickPower
+                            10, // levelsPerColorTierUnit: color changes every 10 levels of clickPower
+                            MAX_CLICK_POWER_FOR_VISUALS // maxRelevantLevel
                         );
                         return (
                             <div className="mb-4 flex flex-col sm:flex-row justify-between items-center bg-gray-700 p-4 rounded-md shadow-inner">
                                 <div className="flex items-center mb-2 sm:mb-0 sm:mr-4">
                                     <div className={`w-16 h-16 mr-4 rounded-md shadow-md flex items-center justify-center overflow-hidden text-2xl font-bold ${upgradeVisuals.colorClass} border-2 border-white`}>
-                                        {/* Display the current actual clickPower, not its tier number */}
-                                        {clickPower}
+                                        {/* Display the visual tier number (1-10) for this upgrade */}
+                                        {upgradeVisuals.tierNumber}
                                     </div>
                                     <div className="text-center sm:text-left">
                                         <p className="text-xl font-semibold">Boost Ticket Sales</p>
@@ -571,17 +588,22 @@ function App() {
 				{/* Upgrade 2: Stadium Capacity (Passive Income) */}
                 {
                     (() => {
-                        const stadiumUpgradeLevel = Math.floor(stadiumCapacity / 100) - 1; // Normalize to 0-indexed upgrade level
+                        // Normalize stadium capacity to an effective upgrade level (0-indexed or 1-indexed for logic)
+                        // If capacity is 100, effective level is 1. If 200, level is 2, etc. (for display logic)
+                        const stadiumEffectiveLevel = Math.floor(stadiumCapacity / 100);
+                        // Max capacity for visual progression could be 2000 (meaning 20 effective levels / 2 full cycles)
+                        const MAX_STADIUM_CAPACITY_FOR_VISUALS = 2000;
                         const upgradeVisuals = getUpgradeTierVisuals(
-                            stadiumUpgradeLevel, // The actual effective level of stadium upgrades
-                            2 // Each color tier lasts for 2 stadium effective upgrades
+                            stadiumEffectiveLevel, // The effective level of stadium upgrades (1, 2, 3...)
+                            2, // levelsPerColorTierUnit: color changes every 2 effective levels (i.e., every 200 capacity)
+                            MAX_STADIUM_CAPACITY_FOR_VISUALS / 100 // maxRelevantLevel: 20 effective levels (2000 / 100)
                         );
                         return (
                             <div className="flex flex-col sm:flex-row justify-between items-center bg-gray-700 p-4 rounded-md shadow-inner">
                                 <div className="flex items-center mb-2 sm:mb-0 sm:mr-4">
                                     <div className={`w-16 h-16 mr-4 rounded-md shadow-md flex items-center justify-center overflow-hidden text-2xl font-bold ${upgradeVisuals.colorClass} border-2 border-white`}>
-                                         {/* Display the current actual stadium capacity */}
-                                         {stadiumCapacity}
+                                         {/* Display the visual tier number (1-10) for this upgrade */}
+                                         {upgradeVisuals.tierNumber}
                                     </div>
                                     <div className="text-center sm:text-left">
                                         <p className="text-xl font-semibold">Expand Stadium</p>
@@ -613,9 +635,13 @@ function App() {
                     (() => {
                         const leagueVisuals = getUpgradeTierVisuals(
                             currentLeagueLevel,
-                            1 // Change color every 1 league level
+                            1, // levelsPerColorTierUnit: 1 level per color tier
+                            LEAGUE_TIERS.length // maxRelevantLevel: Total number of leagues
                         );
                         const nextLeague = LEAGUE_TIERS.find(t => t.level === currentLeagueLevel + 1);
+
+                        // Calculate current team overall for disabled state check
+                        const teamOverallSum = players.reduce((sum, p) => sum + p.overall, 0);
 
                         return (
                             <div className="flex flex-col sm:flex-row justify-between items-center bg-gray-700 p-4 rounded-md shadow-inner mt-4">
@@ -640,16 +666,17 @@ function App() {
                                 {currentLeagueLevel < LEAGUE_TIERS.length && (
                                     <button
                                         onClick={() => {
-                                            if (!nextLeague) return;
-
-                                            const teamOverall = players.reduce((sum, p) => sum + p.overall, 0);
+                                            if (!nextLeague) {
+                                                alert("Error: Next league data not found.");
+                                                return;
+                                            }
 
                                             if (money < nextLeague.promotionCost) {
                                                 alert(`Not enough money for promotion! Needs $${nextLeague.promotionCost.toLocaleString()}.`);
                                                 return;
                                             }
-                                            if (teamOverall < nextLeague.promotionThresholdOverall) {
-                                                alert(`Your team is not strong enough for ${nextLeague.name}! Total OVR needed: ${nextLeague.promotionThresholdOverall.toLocaleString()} (Your team: ${teamOverall.toLocaleString()}).`);
+                                            if (teamOverallSum < nextLeague.promotionThresholdOverall) {
+                                                alert(`Your team is not strong enough for ${nextLeague.name}! Total OVR needed: ${nextLeague.promotionThresholdOverall.toLocaleString()} (Your team: ${teamOverallSum.toLocaleString()}).`);
                                                 return;
                                             }
 
@@ -658,15 +685,16 @@ function App() {
                                             alert(`Congratulations! You've been promoted to the ${nextLeague.name}!`);
                                         }}
                                         className={`py-3 px-6 rounded-lg font-bold transition-colors duration-200 ${
+                                            // Disabled conditions using nextLeague and teamOverallSum
                                             money >= (nextLeague?.promotionCost || Infinity) &&
-                                            players.reduce((sum, p) => sum + p.overall, 0) >= (nextLeague?.promotionThresholdOverall || Infinity)
+                                            teamOverallSum >= (nextLeague?.promotionThresholdOverall || Infinity)
                                                 ? 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'
                                                 : 'bg-gray-500 cursor-not-allowed'
                                         }`}
                                         disabled={
                                             currentLeagueLevel >= LEAGUE_TIERS.length ||
                                             money < (nextLeague?.promotionCost || Infinity) ||
-                                            players.reduce((sum, p) => sum + p.overall, 0) < (nextLeague?.promotionThresholdOverall || Infinity)
+                                            teamOverallSum < (nextLeague?.promotionThresholdOverall || Infinity)
                                         }
                                     >
                                         Promote (Cost: ${nextLeague?.promotionCost.toLocaleString() || 'N/A'})
@@ -696,14 +724,16 @@ function App() {
                                     {/* Player OVR Visual (tier number and color) */}
                                     {
                                         (() => {
+                                            const MAX_PLAYER_OVR_FOR_VISUALS = 100; // Cap player visuals at 100 OVR
                                             const playerVisuals = getUpgradeTierVisuals(
                                                 player.overall,
-                                                5     // Change color every 5 Overall points
+                                                5,     // levelsPerColorTierUnit: Change color every 5 Overall points
+                                                MAX_PLAYER_OVR_FOR_VISUALS // maxRelevantLevel
                                             );
                                             return (
                                                 <div className={`w-12 h-12 mr-3 rounded-full flex items-center justify-center overflow-hidden ${playerVisuals.colorClass} border-2 border-white text-xl font-bold`}>
-                                                    {/* Display the player's actual OVR */}
-                                                    {player.overall}
+                                                    {/* Display the player's OVR tier number (1-10) */}
+                                                    {playerVisuals.tierNumber}
                                                 </div>
                                             );
                                         })()
