@@ -5,8 +5,7 @@ import { gsap } from "gsap";
 import "./App.css";
 
 // ----------------------------------------------------
-// Helper functions, Interfaces, and Image Imports
-// (All defined globally, outside the App component)
+// Helper functions and Interfaces (All defined globally, outside the App component)
 // ----------------------------------------------------
 
 interface Player {
@@ -17,37 +16,7 @@ interface Player {
 	position: "FWD" | "MID" | "DEF" | "GK"; // Forward, Midfielder, Defender, Goalkeeper
 }
 
-// --- Import ALL Visual Tier Images ---
-// Ticket Sales Visual Tiers (ensure you have ticket_sales_visual_1.png through _10.png in src/assets/images/)
-import ts_visual_1 from './assets/images/ticket_sales_visual_1.png';
-import ts_visual_2 from './assets/images/ticket_sales_visual_2.png';
-import ts_visual_3 from './assets/images/ticket_sales_visual_3.png';
-import ts_visual_4 from './assets/images/ticket_sales_visual_4.png';
-import ts_visual_5 from './assets/images/ticket_sales_visual_5.png';
-import ts_visual_6 from './assets/images/ticket_sales_visual_6.png';
-import ts_visual_7 from './assets/images/ticket_sales_visual_7.png';
-import ts_visual_8 from './assets/images/ticket_sales_visual_8.png';
-import ts_visual_9 from './assets/images/ticket_sales_visual_9.png';
-import ts_visual_10 from './assets/images/ticket_sales_visual_10.png';
-
-// Stadium Visual Tiers (ensure you have stadium_visual_1.png through _10.png in src/assets/images/)
-import stadium_visual_1 from './assets/images/stadium_visual_1.png';
-import stadium_visual_2 from './assets/images/stadium_visual_2.png';
-import stadium_visual_3 from './assets/images/stadium_visual_3.png';
-import stadium_visual_4 from './assets/images/stadium_visual_4.png';
-import stadium_visual_5 from './assets/images/stadium_visual_5.png';
-import stadium_visual_6 from './assets/images/stadium_visual_6.png';
-import stadium_visual_7 from './assets/images/stadium_visual_7.png';
-import stadium_visual_8 from './assets/images/stadium_visual_8.png';
-import stadium_visual_9 from './assets/images/stadium_visual_9.png';
-import stadium_visual_10 from './assets/images/stadium_visual_10.png';
-
-// General Icons (ensure you have these files in src/assets/images/)
-import matchIcon from './assets/images/match_icon.png';
-import trainIcon from './assets/images/train_player_icon.png';
-import recruitIcon from './assets/images/recruit_player_icon.png';
-import playerBaseImg from './assets/images/player_base.png'; // Generic player avatar
-import trophyBaseImg from './assets/images/trophy_base.png'; // Generic trophy/emblem
+// NO IMAGE IMPORTS - fully number/color based
 
 
 // Helper function to generate a random player
@@ -137,60 +106,51 @@ const LEAGUE_TIERS: LeagueTier[] = [
     // Add more tiers as desired!
 ];
 
-// Tier Colors (10 colors for 10 color tiers)
+// Tier Colors (10 colors for 10 color tiers - using gradient classes)
 const TIER_COLORS = [
-  "bg-gray-700",   // Tier 0 (Starter/Common)
-  "bg-emerald-700",// Tier 1 (Uncommon)
-  "bg-blue-700",   // Tier 2 (Rare)
-  "bg-purple-700", // Tier 3 (Epic)
-  "bg-yellow-700", // Tier 4 (Legendary)
-  "bg-orange-700", // Tier 5 (Mythic)
-  "bg-pink-700",   // Tier 6 (Divine)
-  "bg-red-700",    // Tier 7 (Ascendant)
-  "bg-lime-700",   // Tier 8 (Celestial)
-  "bg-sky-700",    // Tier 9 (Cosmic)
+  "bg-gradient-to-br from-gray-700 to-gray-900",     // Tier 0: Basic
+  "bg-gradient-to-br from-yellow-700 to-yellow-900", // Tier 1: Bronze (using yellow for warmth)
+  "bg-gradient-to-br from-gray-400 to-gray-600",     // Tier 2: Silver (using lighter grey)
+  "bg-gradient-to-br from-amber-500 to-amber-700",   // Tier 3: Gold (more vibrant gold)
+  "bg-gradient-to-br from-emerald-500 to-emerald-700",// Tier 4: Emerald
+  "bg-gradient-to-br from-blue-500 to-blue-700",      // Tier 5: Blue (Sapphire)
+  "bg-gradient-to-br from-purple-500 to-purple-700",  // Tier 6: Purple (Amethyst)
+  "bg-gradient-to-br from-red-500 to-red-700",        // Tier 7: Red (Ruby)
+  "bg-gradient-to-br from-lime-500 to-lime-700",      // Tier 8: Lime (Jade)
+  "bg-gradient-to-br from-sky-500 to-sky-700",        // Tier 9: Sky (Cosmic)
 ];
 
-// Define these global image arrays here, AFTER their imports
-const TICKET_SALES_VISUAL_IMAGES = [
-    ts_visual_1, ts_visual_2, ts_visual_3, ts_visual_4, ts_visual_5,
-    ts_visual_6, ts_visual_7, ts_visual_8, ts_visual_9, ts_visual_10,
-];
-
-const STADIUM_VISUAL_IMAGES = [
-    stadium_visual_1, stadium_visual_2, stadium_visual_3, stadium_visual_4, stadium_visual_5,
-    stadium_visual_6, stadium_visual_7, stadium_visual_8, stadium_visual_9, stadium_visual_10,
-];
-
-
-// Function to calculate the image and color for an upgrade based on complex tiers
-const getUpgradeVisuals = (
-    currentUpgradeLevel: number,
-    visualImages: string[], // Array of imported image paths for major visual tiers
-    levelsPerVisualTier: number, // How many TOTAL levels before the next major image tier
-    levelsPerColorTier: number = 1 // How many TOTAL levels before the next color tier
+// Function to calculate the color class and display number for an upgrade tier
+// Function to calculate the color class and display number for an upgrade tier
+const getUpgradeTierVisuals = (
+    currentLevel: number, // This is the level (e.g., 1 for League 1, 10 for ClickPower 10, etc.)
+    levelsPerColorTier: number, // How many TOTAL levels before the next color tier
+    maxPossibleTier: number = TIER_COLORS.length // Max number of tier colors to use (1-indexed)
 ) => {
-    const maxVisualTierIndex = visualImages.length - 1;
-    const maxColorTierIndex = TIER_COLORS.length - 1;
-
-    const visualTierIndex = Math.min(
-        Math.floor(currentUpgradeLevel / levelsPerVisualTier),
-        maxVisualTierIndex
-    );
+    // Corrected logic: subtract 1 from currentLevel to make it 0-indexed for calculation
+    // This maps (1, 2, 3...) -> (0, 1, 2...) for array indexing and tier calculation
+    const zeroIndexedLevel = Math.max(0, currentLevel - 1); // Ensure it doesn't go below 0
 
     const colorTierIndex = Math.min(
-        Math.floor(currentUpgradeLevel / levelsPerColorTier) % TIER_COLORS.length,
-        maxColorTierIndex
+        Math.floor(zeroIndexedLevel / levelsPerColorTier),
+        maxPossibleTier - 1 // Ensure we don't go out of bounds of TIER_COLORS array
+    );
+
+    // The displayed tier number should naturally follow the (0-indexed_level / levelsPerColorTier) + 1 logic,
+    // but ensures it doesn't exceed the max possible tier number (10).
+    const tierNumber = Math.min(
+        Math.floor(zeroIndexedLevel / levelsPerColorTier) + 1,
+        maxPossibleTier
     );
 
     return {
-        imageSrc: visualImages[visualTierIndex] || visualImages[0],
         colorClass: TIER_COLORS[colorTierIndex] || TIER_COLORS[0],
+        tierNumber: tierNumber,
     };
 };
 
 // ----------------------------------------------------
-// End Helper functions, Interfaces, and Image Imports
+// End Helper functions and Interfaces
 // ----------------------------------------------------
 
 
@@ -200,7 +160,15 @@ function App() {
 	const [clickPower, setClickPower] = useState(1);
 	const [stadiumCapacity, setStadiumCapacity] = useState(100);
 	const [passiveIncomePerSecond, setPassiveIncomePerSecond] = useState(0);
-    const [currentLeagueLevel, setCurrentLeagueLevel] = useState(1);
+
+    const [currentLeagueLevel, setCurrentLeagueLevel] = useState(() => {
+        const savedGame = localStorage.getItem("quickKickMogulSave");
+        if (savedGame) {
+            const parsedState = JSON.parse(savedGame);
+            return parsedState.currentLeagueLevel || 1;
+        }
+        return 1;
+    });
 
 	const [players, setPlayers] = useState<Player[]>(() => {
 		const savedGame = localStorage.getItem("quickKickMogulSave");
@@ -211,12 +179,14 @@ function App() {
 		return generateInitialLineup();
 	});
 
+    // Match Timer States
     const MATCH_DURATION_SECONDS = 5 * 60; // 5 minutes in seconds
     const [matchInProgress, setMatchInProgress] = useState(false);
     const [matchTimeLeft, setMatchTimeLeft] = useState(MATCH_DURATION_SECONDS);
     const [matchProgress, setMatchProgress] = useState(0); // 0-100 percentage
     const matchIntervalRef = useRef<number | null>(null);
 
+	// --- Refs for GSAP Animations ---
 	const moneyDisplayRef = useRef<HTMLSpanElement>(null);
 
 	// --- Core Game Logic Functions ---
@@ -260,7 +230,7 @@ function App() {
 
 		const newPlayerMinOverall = oldPlayer.overall + 5;
 		const newPlayerMaxOverall = oldPlayer.overall + 15;
-		const newPlayer = generateRandomPlayer(
+		const newPlayer = generateRandomPlayer( // Calls global helper
 			newPlayerMinOverall,
 			newPlayerMaxOverall,
 			oldPlayer.position
@@ -447,7 +417,8 @@ function App() {
 
             setMatchInProgress(parsedState.matchInProgress || false);
             setMatchTimeLeft(parsedState.matchTimeLeft || MATCH_DURATION_SECONDS);
-            setCurrentLeagueLevel(parsedState.currentLeagueLevel || 1);
+            // currentLeagueLevel is handled by its useState initializer
+            // players are handled by their useState initializer
 
             if (parsedState.matchInProgress && parsedState.matchTimeLeft > 0) {
                 setMatchProgress(
@@ -501,9 +472,26 @@ function App() {
 					(+{passiveIncomePerSecond.toFixed(1)}/sec)
 				</p>
                 {/* Display Current League */}
-                <p className="text-2xl font-bold mt-4 text-blue-300">
-                    Current League: {LEAGUE_TIERS.find(t => t.level === currentLeagueLevel)?.name || "Unknown League"}
-                </p>
+                {/* League Visuals with dynamic color tier */}
+                {
+                    (() => {
+                        const leagueVisuals = getUpgradeTierVisuals(
+                            currentLeagueLevel,
+                            1     // Change color every 1 league level
+                        );
+                        return (
+                            <div className="flex items-center justify-center mt-4">
+                                {/* Using the tierNumber as the visual representation */}
+                                <div className={`w-12 h-12 mr-2 rounded-full flex items-center justify-center ${leagueVisuals.colorClass} border-2 border-white text-lg font-bold`}>
+                                     {leagueVisuals.tierNumber}
+                                </div>
+                                <p className="text-2xl font-bold text-blue-300">
+                                    Current League: {LEAGUE_TIERS.find(t => t.level === currentLeagueLevel)?.name || "Unknown League"}
+                                </p>
+                            </div>
+                        );
+                    })()
+                }
 			</div>
 
 			{/* Main Click Button */}
@@ -532,7 +520,7 @@ function App() {
 						className="bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold py-4 px-8 rounded-xl text-xl shadow-lg transform transition-all duration-150 ease-in-out hover:scale-105 border-b-4 border-red-800 w-full flex items-center justify-center"
 						disabled={players.length === 0}
 					>
-                        <img src={matchIcon} alt="Play Match" className="w-8 h-8 mr-2" />
+                        {/* No image */}
 						Play Match!
 					</button>
 				)}
@@ -545,24 +533,18 @@ function App() {
 				</h2>
 
 				{/* Upgrade 1: Click Power (Ticket Sales) */}
-                {/* Visuals calculated using getUpgradeVisuals */}
                 {
                     (() => {
-                        const ticketSalesVisuals = getUpgradeVisuals(
-                            clickPower,
-                            TICKET_SALES_VISUAL_IMAGES,
-                            10, // Change major image every 10 levels of clickPower
-                            1   // Change color every 1 level of clickPower within a visual tier
+                        const upgradeVisuals = getUpgradeTierVisuals(
+                            clickPower, // The actual level of clickPower
+                            10 // Each color tier lasts for 10 levels of clickPower
                         );
                         return (
                             <div className="mb-4 flex flex-col sm:flex-row justify-between items-center bg-gray-700 p-4 rounded-md shadow-inner">
                                 <div className="flex items-center mb-2 sm:mb-0 sm:mr-4">
-                                    <div className={`w-16 h-16 mr-4 rounded-md shadow-md flex items-center justify-center overflow-hidden ${ticketSalesVisuals.colorClass}`}>
-                                        <img
-                                            src={ticketSalesVisuals.imageSrc}
-                                            alt="Ticket Sales Upgrade"
-                                            className="w-14 h-14 object-contain"
-                                        />
+                                    <div className={`w-16 h-16 mr-4 rounded-md shadow-md flex items-center justify-center overflow-hidden text-2xl font-bold ${upgradeVisuals.colorClass} border-2 border-white`}>
+                                        {/* Display the current actual clickPower, not its tier number */}
+                                        {clickPower}
                                     </div>
                                     <div className="text-center sm:text-left">
                                         <p className="text-xl font-semibold">Boost Ticket Sales</p>
@@ -587,25 +569,19 @@ function App() {
 
 
 				{/* Upgrade 2: Stadium Capacity (Passive Income) */}
-                {/* Visuals calculated using getUpgradeVisuals */}
                 {
                     (() => {
                         const stadiumUpgradeLevel = Math.floor(stadiumCapacity / 100) - 1; // Normalize to 0-indexed upgrade level
-                        const stadiumVisuals = getUpgradeVisuals(
-                            stadiumUpgradeLevel,
-                            STADIUM_VISUAL_IMAGES,
-                            2, // Change major image every 2 stadium effective upgrades (200 capacity increase)
-                            1  // Change color every 1 stadium effective upgrade (100 capacity increase)
+                        const upgradeVisuals = getUpgradeTierVisuals(
+                            stadiumUpgradeLevel, // The actual effective level of stadium upgrades
+                            2 // Each color tier lasts for 2 stadium effective upgrades
                         );
                         return (
                             <div className="flex flex-col sm:flex-row justify-between items-center bg-gray-700 p-4 rounded-md shadow-inner">
                                 <div className="flex items-center mb-2 sm:mb-0 sm:mr-4">
-                                    <div className={`w-16 h-16 mr-4 rounded-md shadow-md flex items-center justify-center overflow-hidden ${stadiumVisuals.colorClass}`}>
-                                        <img
-                                            src={stadiumVisuals.imageSrc}
-                                            alt="Stadium Upgrade"
-                                            className="w-14 h-14 object-contain"
-                                        />
+                                    <div className={`w-16 h-16 mr-4 rounded-md shadow-md flex items-center justify-center overflow-hidden text-2xl font-bold ${upgradeVisuals.colorClass} border-2 border-white`}>
+                                         {/* Display the current actual stadium capacity */}
+                                         {stadiumCapacity}
                                     </div>
                                     <div className="text-center sm:text-left">
                                         <p className="text-xl font-semibold">Expand Stadium</p>
@@ -633,22 +609,20 @@ function App() {
 
 
                 {/* Promote to Next League Upgrade */}
-                {/* Visuals for League Emblem (using trophyBaseImg and coloring based on league level) */}
                 {
                     (() => {
-                        const leagueVisuals = getUpgradeVisuals(
+                        const leagueVisuals = getUpgradeTierVisuals(
                             currentLeagueLevel,
-                            [trophyBaseImg], // Only one visual image for leagues (but it uses color tiers)
-                            1000, // Very high number, so it never changes "visual tier" image
-                            1     // Change color every 1 league level
+                            1 // Change color every 1 league level
                         );
                         const nextLeague = LEAGUE_TIERS.find(t => t.level === currentLeagueLevel + 1);
 
                         return (
                             <div className="flex flex-col sm:flex-row justify-between items-center bg-gray-700 p-4 rounded-md shadow-inner mt-4">
                                 <div className="flex items-center mb-2 sm:mb-0 sm:mr-4">
-                                    <div className={`w-16 h-16 mr-4 rounded-md shadow-md flex items-center justify-center overflow-hidden ${leagueVisuals.colorClass}`}>
-                                        <img src={trophyBaseImg} alt="League Emblem" className="w-14 h-14 object-contain" />
+                                    <div className={`w-16 h-16 mr-4 rounded-md shadow-md flex items-center justify-center overflow-hidden text-2xl font-bold ${leagueVisuals.colorClass} border-2 border-white`}>
+                                        {/* Display the tier number for league promotion */}
+                                        {leagueVisuals.tierNumber}
                                     </div>
                                     <div className="text-center sm:text-left">
                                         <p className="text-xl font-semibold">Promote to Next League</p>
@@ -719,22 +693,17 @@ function App() {
 								className="bg-gray-700 p-3 rounded-md flex flex-col sm:flex-row justify-between items-center shadow-inner"
 							>
 								<div className="flex items-center mb-2 sm:mb-0 text-center sm:text-left">
-                                    {/* Player Avatar with dynamic color tier */}
+                                    {/* Player OVR Visual (tier number and color) */}
                                     {
                                         (() => {
-                                            const playerVisuals = getUpgradeVisuals(
+                                            const playerVisuals = getUpgradeTierVisuals(
                                                 player.overall,
-                                                [playerBaseImg], // Only one visual image for players
-                                                1000, // Very high number, so it never changes "visual tier"
                                                 5     // Change color every 5 Overall points
                                             );
                                             return (
-                                                <div className={`w-12 h-12 mr-3 rounded-full flex items-center justify-center overflow-hidden ${playerVisuals.colorClass}`}>
-                                                    <img
-                                                        src={playerBaseImg}
-                                                        alt="Player Avatar"
-                                                        className="w-10 h-10 object-contain"
-                                                    />
+                                                <div className={`w-12 h-12 mr-3 rounded-full flex items-center justify-center overflow-hidden ${playerVisuals.colorClass} border-2 border-white text-xl font-bold`}>
+                                                    {/* Display the player's actual OVR */}
+                                                    {player.overall}
                                                 </div>
                                             );
                                         })()
@@ -762,7 +731,7 @@ function App() {
 										}`}
 										disabled={money < player.overall * 5}
 									>
-                                        <img src={trainIcon} alt="Train Player" className="w-4 h-4 mr-1" />
+                                        {/* No image */}
 										Train (Cost: ${(player.overall * 5).toLocaleString()})
 									</button>
 									{/* Recruit New Player Button for this slot */}
@@ -775,7 +744,7 @@ function App() {
 										}`}
 										disabled={money < (player.overall + 5) * 100}
 									>
-                                        <img src={recruitIcon} alt="Recruit Player" className="w-4 h-4 mr-1" />
+                                        {/* No image */}
 										Recruit New (Est. Cost: $
 										{((player.overall + 5) * 100).toLocaleString()})
 									</button>
